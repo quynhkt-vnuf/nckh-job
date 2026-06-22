@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 
-# 1. CẤU HÌNH TRANG WEB (Hiển thị trên tab trình duyệt)
+# 1. CẤU HÌNH TRANG WEB
 st.set_page_config(
     page_title="Hệ thống Việc làm Sinh viên Kỹ thuật",
     page_icon="🤖",
@@ -12,13 +12,13 @@ st.set_page_config(
 # 2. ĐƯỜNG DẪN ĐẾN FILE CƠ SỞ DỮ LIỆU TĨNH TRÊN GITHUB
 ten_file_data = "jobs.csv"
 
-# Kiểm tra sự tồn tại của file dữ liệu trước khi dựng giao diện
+# Kiểm tra sự tồn tại của file dữ liệu trước khi dựng giao diện để tránh lỗi sập trang
 if not os.path.exists(ten_file_data):
     st.error(f"❌ Không tìm thấy file cơ sở dữ liệu '{ten_file_data}' trên GitHub!")
-    st.info("👉 Hướng dẫn cho Sinh viên: Hãy dùng tính năng 'Upload files' trên GitHub để tải file 'jobs.csv' (đã cào thành công từ máy tính) lên cùng thư mục với file app.py này nhé.")
+    st.info("👉 Hướng dẫn: Sinh viên cần upload file 'jobs.csv' (đã chạy ra kết quả từ máy tính) lên kho chứa GitHub này.")
 else:
     try:
-        # Tải dữ liệu từ file CSV vào bảng dữ liệu Pandas
+        # Tải dữ liệu từ file CSV
         df = pd.read_csv(ten_file_data)
         
         # 3. PHẦN TIÊU ĐỀ CHÍNH CỦA WEBSITE
@@ -29,14 +29,12 @@ else:
         # 4. KHU VỰC THỐNG KÊ TỔNG QUAN (Metrics Dashboard)
         st.subheader("📊 Thống kê tổng quan hệ thống")
         
-        # Tính toán số lượng tin theo từng ngành từ cơ sở dữ liệu
         tong_so_tin = len(df)
         tin_it = len(df[df['Ngành học'] == "Công nghệ thông tin"])
         tin_oto = len(df[df['Ngành học'] == "Công nghệ kỹ thuật ô tô"])
         tin_cokhi = len(df[df['Ngành học'] == "Cơ khí"])
         tin_tdh = len(df[df['Ngành học'] == "Tự động hóa"])
         
-        # Hiển thị số liệu dạng thẻ (Card) chia làm 5 cột ngay ngắn
         col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
             st.metric(label="Tổng số việc làm", value=tong_so_tin)
@@ -53,39 +51,32 @@ else:
         
         # 5. KHU VỰC BỘ LỌC TƯƠNG TÁC (Thanh Sidebar bên trái)
         st.sidebar.header("🎯 Bộ lọc tìm kiếm thông minh")
-        
-        # Bộ lọc 1: Từ khóa tuyển dụng
         tu_khoa_tim = st.sidebar.text_input("Nhập từ khóa tuyển dụng (Ví dụ: Intern, Thực tập...):")
         
-        # Bộ lọc 2: Chọn chuyên ngành
         danh_sach_nganh = ["Tất cả các ngành"] + list(df['Ngành học'].unique())
         nganh_duoc_chon = st.sidebar.selectbox("Chọn chuyên ngành của bạn:", danh_sach_nganh)
         
-        # 6. TIẾN HÀNH LỌC DỮ LIỆU THEO LỰA CHỌN CỦA NGƯỜI DÙNG
+        # 6. TIẾN HÀNH LỌC DỮ LIỆU
         df_loc = df.copy()
-        
-        # Áp dụng lọc chuyên ngành
         if nganh_duoc_chon != "Tất cả các ngành":
             df_loc = df_loc[df_loc['Ngành học'] == nganh_duoc_chon]
             
-        # Áp dụng lọc từ khóa tiêu đề (Không phân biệt chữ hoa hay chữ thường)
         if tu_khoa_tim:
             df_loc = df_loc[df_loc['Tiêu đề'].str.contains(tu_khoa_tim, case=False, na=False)]
             
-        # 7. HIỂN THỊ BIỂU ĐỒ TRỰC QUAN (Data Visualization)
+        # 7. HIỂN THỊ BIỂU ĐỒ TRỰC QUAN
         st.subheader("📈 Biểu đồ cơ cấu nhu cầu tuyển dụng")
         thong_ke_nganh = df_loc['Ngành học'].value_counts()
         st.bar_chart(thong_ke_nganh)
         
         st.markdown("---")
         
-        # 8. HIỂN THỊ DANH SÁCH VIỆC LÀM (Giao diện thẻ tin tức sạch)
+        # 8. HIỂN THỊ DANH SÁCH VIỆC LÀM (Sử dụng hàm st.write sạch để tránh hoàn toàn lỗi dấu ngoặc)
         st.subheader(f"📋 Danh sách việc làm phù hợp ({len(df_loc)} kết quả)")
         
         if df_loc.empty:
-            st.warning("😭 Không tìm thấy công việc nào phù hợp với bộ lọc hiện tại. Vui lòng thử lại từ khóa khác!")
+            st.warning("😭 Không tìm thấy công việc nào phù hợp với bộ lọc hiện tại.")
         else:
-            # Duyệt qua từng dòng dữ liệu đã lọc để hiển thị lên màn hình
             for idx, row in df_loc.iterrows():
                 tieu_de_tin = str(row['Tiêu đề'])
                 cong_ty_tin = str(row['Công ty'])
@@ -93,18 +84,16 @@ else:
                 link_tin = str(row['Link'])
                 
                 with st.container():
-                    st.write(f"### 📌 {tieu_de_tin}")
+                    st.write("### 📌 " + tieu_de_tin)
                     
-                    # Chia luồng thông tin làm 2 cột
                     c1, c2 = st.columns([2, 1])
                     with c1:
-                        st.write(f"🏢 **Doanh nghiệp:** {cong_ty_tin}")
+                        st.write("🏢 **Doanh nghiệp:** " + cong_ty_tin)
                     with c2:
-                        st.info(f"📁 Chuyên ngành: {nganh_tin}")
+                        st.info("📁 Chuyên ngành: " + nganh_tin)
                         
-                    # Đường link dẫn thẳng tới nguồn tuyển dụng gốc
                     st.markdown(f"[🔗 Xem chi tiết & Ứng tuyển tại đây]({link_tin})")
-                    st.write("---") # Đường phân cách nhỏ mờ giữa các tin
+                    st.write("---")
 
     except Exception as e:
         st.error(f"❌ Có lỗi phát sinh khi xử lý cấu trúc dữ liệu: {e}")
